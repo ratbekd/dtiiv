@@ -66,7 +66,7 @@
 #' summary(fit)
 #' @export
 dtiiv <- function(formula, data, controls = NULL, cluster = NULL,
-                  sets = c("VT", "two-sided", "four", "mean", "error", "both"),
+                  sets = c("VT", "two-sided", "four", "bounded", "mean", "error", "both"),
                   level = 0.95, crit = c("hotelling", "chisq"),
                   theta_range = c(-pi / 4, pi / 4), ngrid = 241, instruments = NULL) {
   cl_call <- match.call()

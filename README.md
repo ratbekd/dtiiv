@@ -38,6 +38,7 @@ dtiiv_test(fit, beta0 = c(0, 1))
 |---|---|---|
 | `"VT"` | variance tendency, E[u² s] = 0 | the error is skewed |
 | `"mean"` | E[u₀ \| s₀] = 0 | the exogenous part of x is non-Gaussian |
+| `"bounded"` | E[u₀ \| s₀] = 0, bounded functions of a robust z | as `"mean"`; recommended for heavy-tailed x |
 | `"error"` | E[s₀ \| u₀] = 0 | the error is non-Gaussian |
 | `"both"` | both | either is non-Gaussian |
 | `"two-sided"`, `"one-sided"`, `"four"`, `"five"`, `"variance"` | polynomial sets of the paper | see `?dtiiv_moments` |

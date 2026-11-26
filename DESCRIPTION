@@ -1,6 +1,6 @@
 Package: dtiiv
 Title: Distributional Tendency Intrinsic Instrumental Variables
-Version: 0.1.0
+Version: 0.1.1
 Authors@R: c(
     person("Ratbek", "Dzhumashev", email = "ratbek.dzhumashev@monash.edu", role = c("aut", "cre")),
     person("Ainura", "Tursunalieva", email = "ainura.tursunalieva@data61.csiro.au", role = "aut"))

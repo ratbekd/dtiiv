@@ -41,6 +41,13 @@ print.dtiiv_moment <- function(x, ...) {
 }
 
 phi0 <- function(z) exp(-z^2 / 2)
+## robust standardization of s: median and 1.4826 * MAD (rob_lib.R). The location and
+## scale need no first-step correction: under MI, E[u k(s)] = 0 for every k.
+.zs <- function(s) {
+  m <- stats::median(s); tau <- 1.4826 * stats::median(abs(s - m))
+  if (!is.finite(tau) || tau <= 0) tau <- stats::sd(s)
+  list(z = (s - m) / tau, tau = tau)
+}
 
 .moment_registry <- function() {
   M <- list(
@@ -60,6 +67,12 @@ phi0 <- function(z) exp(-z^2 / 2)
                  function(s, u) tanh(s), "E[u tanh(s)]", "MI"),
     dtiiv_moment("uphis", function(s, u) u * phi0(s), function(s, u) -u * s * phi0(s),
                  function(s, u) phi0(s), "E[u exp(-s^2/2)]", "MI"),
+    dtiiv_moment("utanhz", function(s, u) u * tanh(.zs(s)$z),
+                 function(s, u) { Z <- .zs(s); u * (1 - tanh(Z$z)^2) / Z$tau },
+                 function(s, u) tanh(.zs(s)$z), "E[u tanh(z)], z = robust-standardized s", "MI"),
+    dtiiv_moment("uphiz", function(s, u) u * phi0(.zs(s)$z),
+                 function(s, u) { Z <- .zs(s); -u * Z$z * phi0(Z$z) / Z$tau },
+                 function(s, u) phi0(.zs(s)$z), "E[u exp(-z^2/2)], z = robust-standardized s", "MI"),
     dtiiv_moment("stanhu", function(s, u) s * tanh(u), function(s, u) tanh(u),
                  function(s, u) s * (1 - tanh(u)^2), "E[s tanh(u)]", "RMI"),
     dtiiv_moment("stanhu2", function(s, u) s * tanh(u / 2), function(s, u) tanh(u / 2),
@@ -81,6 +94,7 @@ phi0 <- function(z) exp(-z^2 / 2)
   "four"      = c("vt", "us2", "u3s", "us3"),
   "five"      = c("vt", "us2", "u3s", "us3", "u2s2"),
   "variance"  = c("vt", "us2", "u2s2", "u2m1s3"),
+  "bounded"   = c("utanhz", "uphiz"),
   "mean"      = c("us2", "us3", "utanhs", "uphis"),
   "error"     = c("stanhu", "stanhu2", "sphiu", "suphiu"),
   "both"      = c("us2", "us3", "utanhs", "uphis", "stanhu", "stanhu2", "sphiu", "suphiu")
@@ -101,6 +115,11 @@ phi0 <- function(z) exp(-z^2 / 2)
 #' * `"VT"`: the variance tendency alone (exactly identified);
 #' * `"two-sided"`, `"one-sided"`, `"four"`, `"five"`, `"variance"`: the
 #'   polynomial sets of the paper;
+#' * `"bounded"`: the bounded mean tendencies of the paper,
+#'   \eqn{E[u \tanh z]} and \eqn{E[u e^{-z^2/2}]} with \eqn{z} the
+#'   standardization of \eqn{s} by its median and 1.4826 times its median
+#'   absolute deviation; valid under MI and recommended for heavy-tailed
+#'   regressors, with the default (Hotelling) critical values;
 #' * `"mean"`: mean tendencies \eqn{E[u h(s)]} with
 #'   \eqn{h(s) = (s^2, s^3, \tanh s, e^{-s^2/2})}, valid under MI;
 #' * `"error"`: error-side tendencies \eqn{E[s a(u)]} with

@@ -1,7 +1,8 @@
 test_that("moment derivatives match finite differences", {
   M <- dtiiv:::.moment_registry()
   set.seed(3); s <- rnorm(50); u <- rnorm(50); h <- 1e-6
-  for (m in M) {
+  ## the robust-z moments hold the median and MAD fixed (no first-step effect under MI)
+  for (m in M[setdiff(names(M), c("utanhz", "uphiz"))]) {
     expect_equal(m$gs(s, u), (m$g(s + h, u) - m$g(s - h, u)) / (2 * h), tolerance = 1e-6, info = m$id)
     expect_equal(m$gu(s, u), (m$g(s, u + h) - m$g(s, u - h)) / (2 * h), tolerance = 1e-6, info = m$id)
   }
@@ -10,7 +11,7 @@ test_that("moment derivatives match finite differences", {
 test_that("the sets cover the true slope and exclude OLS in a skewed design", {
   set.seed(11)
   d <- dtiiv_simulate(4000, beta = 1, lambda = 0.5, clusters = 100)
-  fit <- dtiiv(y ~ x, d, controls = ~ w, cluster = ~ cluster, sets = c("VT", "four", "mean", "error"))
+  fit <- dtiiv(y ~ x, d, controls = ~ w, cluster = ~ cluster, sets = c("VT", "four", "bounded", "mean", "error"))
   expect_s3_class(fit, "dtiiv")
   expect_gt(fit$ols[["estimate"]], 1.2)                      # OLS is biased upwards
   for (nm in names(fit$sets)) {

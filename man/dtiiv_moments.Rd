@@ -26,6 +26,11 @@ The named sets are:
 \item \code{"VT"}: the variance tendency alone (exactly identified);
 \item \code{"two-sided"}, \code{"one-sided"}, \code{"four"}, \code{"five"}, \code{"variance"}: the
 polynomial sets of the paper;
+\item \code{"bounded"}: the bounded mean tendencies of the paper,
+\eqn{E[u \tanh z]} and \eqn{E[u e^{-z^2/2}]} with \eqn{z} the
+standardization of \eqn{s} by its median and 1.4826 times its median
+absolute deviation; valid under MI and recommended for heavy-tailed
+regressors, with the default (Hotelling) critical values;
 \item \code{"mean"}: mean tendencies \eqn{E[u h(s)]} with
 \eqn{h(s) = (s^2, s^3, \tanh s, e^{-s^2/2})}, valid under MI;
 \item \code{"error"}: error-side tendencies \eqn{E[s a(u)]} with

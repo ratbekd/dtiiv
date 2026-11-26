@@ -36,6 +36,7 @@ component is non-Gaussian.
 |---|---|---|
 | `"VT"` | variance tendency | a skewed error |
 | `"mean"` | $E[u_0 \mid s_0] = 0$ | a non-Gaussian $s_0$ |
+| `"bounded"` | $E[u_0 \mid s_0] = 0$, bounded functions | as `"mean"`; recommended for heavy-tailed $x$ |
 | `"error"` | $E[s_0 \mid u_0] = 0$ | a non-Gaussian $u_0$ |
 | `"both"` | both | either |
 | `"two-sided"`, `"four"`, `"five"`, ... | polynomial sets of the paper | see `?dtiiv_moments` |
@@ -88,13 +89,16 @@ card$married1 <- as.numeric(card$married == 1)
 ctrl <- ~ exper + expersq + black + smsa + south + smsa66 +
   reg662 + reg663 + reg664 + reg665 + reg666 + reg667 + reg668 + reg669 + married1
 fc <- dtiiv(lwage ~ educ, data = card, controls = ctrl,
-            sets = c("VT", "two-sided", "four", "mean", "error", "both"),
+            sets = c("VT", "two-sided", "four", "bounded", "mean", "error", "both"),
             instruments = ~ nearc2 + nearc4)
 fc
 ```
 
 ## Practical advice
 
+* **Heavy tails.** If the partialled regressor has extreme kurtosis, sets built
+  on powers of $s$ are unreliable; report the `"bounded"` set with the default
+  (Hotelling) critical values.
 * **Check the shape first.** If the partialled regressor and the OLS residual
   look Gaussian in `summary()`, the data cannot identify the slope this way.
 * **Choose the restriction, not the moments.** Use `"mean"` when mean
