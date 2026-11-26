@@ -1,0 +1,121 @@
+---
+title: "Getting started with dtiiv"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Getting started with dtiiv}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.width = 6, fig.height = 4)
+```
+
+`dtiiv` estimates the effect of an endogenous regressor in a linear model when
+no external instrument is available. It replaces the exclusion restriction
+with a restriction on the joint distribution of the regressor's exogenous part
+and the error, and uses the skewness and kurtosis of the data to find the
+slope at which that restriction holds.
+
+## The idea in one paragraph
+
+Write the model, after partialling out the controls, as
+$y = \beta x + u$ with $x = \lambda u + s_0$. Here $s_0$ is the exogenous
+variation in $x$: it would be the ideal instrument if we could observe it. At
+any trial slope $b$, `dtiiv` forms the residual $u(b) = y - bx$ and the part
+$s(b)$ of $x$ that is uncorrelated with it. Because they are uncorrelated at
+every $b$, second moments cannot locate $\beta$. Higher moments can. Under
+mean independence, $E[u_0 \mid s_0] = 0$, all the mean tendencies
+$E[u\,h(s)]$ vanish at the true slope. Under reverse mean independence,
+$E[s_0 \mid u_0] = 0$, all the error-side tendencies $E[s\,a(u)]$ vanish.
+The variance tendency $E[u^2 s] = 0$ says that the error's spread does not
+move with $s_0$. These conditions identify $\beta$ only when the relevant
+component is non-Gaussian.
+
+| Moment set | Restriction | Needs |
+|---|---|---|
+| `"VT"` | variance tendency | a skewed error |
+| `"mean"` | $E[u_0 \mid s_0] = 0$ | a non-Gaussian $s_0$ |
+| `"error"` | $E[s_0 \mid u_0] = 0$ | a non-Gaussian $u_0$ |
+| `"both"` | both | either |
+| `"two-sided"`, `"four"`, `"five"`, ... | polynomial sets of the paper | see `?dtiiv_moments` |
+
+## A simulated example
+
+```{r}
+library(dtiiv)
+set.seed(1)
+d <- dtiiv_simulate(n = 3000, beta = 1, lambda = 0.4, clusters = 100)
+coef(lm(y ~ x + w, data = d))["x"]       # OLS is biased: the truth is 1
+```
+
+```{r}
+fit <- dtiiv(y ~ x, data = d, controls = ~ w, cluster = ~ cluster,
+             sets = c("VT", "four", "mean", "error", "both"))
+fit
+```
+
+For each set the output gives the CUE point estimate, its standard error,
+the J test of the overidentifying restrictions, and the confidence set. The
+confidence set collects the slopes that a cluster-robust score test does not
+reject. It stays valid when identification is weak, so it can be wide, have
+several pieces, or be empty. An empty set means the model with that
+restriction is rejected at every slope, which is a sign of misspecification.
+
+`summary()` adds the diagnostics that tell you whether the data carry
+identifying information at all:
+
+```{r}
+summary(fit)
+```
+
+The plot shows the test statistic divided by its critical value. The
+confidence set is where a curve lies below the dashed line.
+
+```{r}
+plot(fit)
+```
+
+## A real example: returns to schooling
+
+Card's (1995) data are a standard test case. They come with an external
+instrument (college proximity), so DT-IIV can be compared with 2SLS.
+
+```{r, eval = requireNamespace("wooldridge", quietly = TRUE)}
+data(card, package = "wooldridge")
+card <- card[!is.na(card$married), ]
+card$married1 <- as.numeric(card$married == 1)
+ctrl <- ~ exper + expersq + black + smsa + south + smsa66 +
+  reg662 + reg663 + reg664 + reg665 + reg666 + reg667 + reg668 + reg669 + married1
+fc <- dtiiv(lwage ~ educ, data = card, controls = ctrl,
+            sets = c("VT", "two-sided", "four", "mean", "error", "both"),
+            instruments = ~ nearc2 + nearc4)
+fc
+```
+
+## Practical advice
+
+* **Check the shape first.** If the partialled regressor and the OLS residual
+  look Gaussian in `summary()`, the data cannot identify the slope this way.
+* **Choose the restriction, not the moments.** Use `"mean"` when mean
+  independence of the error from the exogenous variation is credible, and
+  `"error"` for the reverse. Agreement across families is the strongest
+  evidence.
+* **Read an empty set as a specification test.** Add the missing
+  nonlinearity, such as a step at a degree threshold or a quadratic term, to
+  `controls`, and refit.
+* **Binary variables.** With a binary regressor, the mean tendencies hold
+  mechanically at the OLS slope; with binary regressor and outcome nothing is
+  identified, and `dtiiv()` stops.
+* **Clusters.** Supply `cluster` whenever the errors may be correlated within
+  groups. The default critical values account for the number of clusters.
+* **Your own moments.** `dtiiv_moment()` defines a new tendency, and `sets`
+  accepts named lists of moments.
+
+```{r}
+m5 <- dtiiv_moment("us5", g = function(s, u) u * s^5,
+                   gs = function(s, u) 5 * u * s^4, gu = function(s, u) s^5,
+                   label = "E[u s^5]", restriction = "MI")
+dtiiv(y ~ x, d, controls = ~ w, cluster = ~ cluster,
+      sets = list(custom = list("us2", "us3", m5)))
+```

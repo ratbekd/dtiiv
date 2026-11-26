@@ -1,0 +1,32 @@
+Package: dtiiv
+Title: Distributional Tendency Intrinsic Instrumental Variables
+Version: 0.1.0
+Authors@R: c(
+    person("Ratbek", "Dzhumashev", email = "ratbek.dzhumashev@monash.edu", role = c("aut", "cre")),
+    person("Ainura", "Tursunalieva", email = "ainura.tursunalieva@data61.csiro.au", role = "aut"))
+Description: Estimates the slope of an endogenous regressor in a linear model
+    without an external instrument. The regressor is rotated against the
+    residual so that, at the true slope, its exogenous component and the
+    error satisfy distributional tendency conditions: the variance tendency,
+    mean tendencies E[u h(s)] = 0, and error-side tendencies E[s a(u)] = 0.
+    These conditions use the skewness and kurtosis of the data. The package
+    computes identification-robust confidence sets by inverting a
+    cluster-robust score test with first-step corrections and Hotelling-type
+    critical values, continuously updated GMM estimates with J tests, and the
+    roots of the variance tendency.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+Depends: R (>= 4.1.0)
+Imports:
+    graphics,
+    grDevices,
+    stats
+Suggests:
+    knitr,
+    rmarkdown,
+    testthat (>= 3.0.0),
+    wooldridge
+VignetteBuilder: knitr
+Config/testthat/edition: 3
+Config/roxygen2/version: 8.0.0
